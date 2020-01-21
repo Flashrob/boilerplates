@@ -1,0 +1,199 @@
+*************************
+**************************
+PSQL files
+*************************
+*************************
+touch table.sql
+nano table.sql
+
+//copy paste
+
+CREATE TABLE IF NOT EXISTS pokemon (
+    id SERIAL PRIMARY KEY,
+    name TEXT,
+    img TEXT,
+    weight TEXT,
+    height TEXT
+);
+
+touch seed.sql
+nano seed.sql
+
+INSERT INTO pokemon (name, img, weight, height) VALUES ('Bulbasaur', 'http://www.serebii.net/pokemongo/pokemon/001.png', '6.9 kg', '0.71 m');
+
+//THEN run
+
+psql -d testdb -U user -f tables.sql
+
+//-d for database, -U for user, -f for file
+
+*************************
+**************************
+NPM Installs
+*************************
+*************************
+
+npm install pg
+npm install moment
+npm install jsonfile
+npm install express
+npm install express-react-views react react-dom
+npm install method-override
+
+//FULL STACK INSTALLS
+npm install pg express method-override express-react-views react react-dom
+
+// ******************************************
+// ******************************************
+//             BOILERPLATE START
+// ******************************************
+// ******************************************
+
+//ALL REQUIRES (DELETE WHAT IS NOT NEEDED)
+const pg = require('pg')
+const moment = require('moment')
+const jsonfile = require('jsonfile');
+const express = require('express');
+const app = express();
+const reactEngine = require('express-react-views').createEngine();
+const methodOverride = require('method-override')
+
+//INIT EXPRESS APP AND METHOD OVERRIDE FOR PUT/DELETE
+app.use(express.static(__dirname+'/public/'));
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
+app.use(methodOverride('_method'));
+app.use(express.static('.')); //FOR CSS FILES
+
+//REACT ENGINE
+app.engine('jsx', reactEngine);
+app.set('views', __dirname + '/views');
+app.set('view engine', 'jsx');
+
+// PSQL SETUP
+const configs = {
+user: 'postgres', // YOUR USERNAME
+host: '127.0.0.1',
+database: 'pokemons', // THE DATABASE IN POSTGRE YOU WANT THIS CODE TO RUN IN 
+port: 5432,
+}; 
+
+//DATABASE
+const pool = new pg.Pool(configs)
+
+//ERROR ON STARTING UP DATABASE
+pool.on('error', function (err) {
+  console.log('idle client error', err.message, err.stack);
+});
+
+
+//EXPRESS ROUTES
+app.get('/hello', (req, res) => {
+  // query database for all pokemon
+  let queryText = 'SELECT * FROM pokemon'
+
+  pool.query(queryText, (err, result) => {
+
+    res.send(result.rows)
+  })
+  // respond with text that lists the names of all the pokemons
+});
+
+app.get('/new', (req, res) => {
+
+  let form = `<html><body>
+  <form action="/pokemon" method="POST">
+    name<input name="name"/><br/>
+    img<input name="img"/><br/>
+    wieght<input name="weight"/><br/>
+    height<input name="height"/>
+    <input type="submit"/>
+  </form>
+</body></html>`
+
+  res.send(form)
+
+})
+
+app.post('/pokemon', (req, res) => {
+
+  const queryText = "INSERT INTO pokemon (name, img, weight, height) VALUES ($1, $2, $3, $4) RETURNING *"
+
+  const values = [
+    req.body.name,
+    req.body.img,
+    req.body.weight,
+    req.body.height
+  ]
+
+  pool.query(queryText, values, (err, result) => {
+
+    if (err) {
+      console.log("ERRRR", err)
+    } else {
+      console.log(result.rows)
+	res.send(result.rows[0])
+	//REACT .JSX FILE
+      //res.render('result', result.rows[0])
+    }
+
+  })
+
+})
+
+// ************************************************
+// ************************************************
+// LISTENING AND ENDING THE SERVER
+// ************************************************
+// ************************************************
+
+const server = app.listen(3000, () => console.log('~~~ Tuning in to the waves of port 3000 ~~~'));
+
+let onClose = function(){
+
+  console.log("closing");
+
+  server.close(() => {
+
+    console.log('Process terminated');
+
+    pool.end( () => console.log('Shut down db connection pool'));
+  })
+};
+
+process.on('SIGTERM', onClose);
+process.on('SIGINT', onClose);
+
+
+// ******************************************
+// ******************************************
+//             BOILERPLATE END
+// ******************************************
+// ******************************************
+
+
+//OBSOLETE SQL STAND-ALONE BOILERPLATE
+//const client = new pg.Client(configs);
+
+//PSQL REQUEST
+//client.connect((err) => {
+//
+//  if( err ){
+//    console.log( "error", err.message );
+//  }
+//
+// const queryText = 'SELECT * FROM students'
+//
+//    pool.query(text, (err,res) => {
+//	console.log("works!")
+//}
+//
+//  client.query(queryText, (err, res) => {
+//    if (err) {
+//      console.log("query error", err.message);
+//    } else {
+//     console.log("result", res.rows[0]);
+//   }
+// });
+//
+//});

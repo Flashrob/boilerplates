@@ -39,6 +39,8 @@ npm install jsonfile
 npm install express
 npm install express-react-views react react-dom
 npm install method-override
+npm install cookie-parser //For parsing cookies as objects
+npm install js-sha256 //For PW-Hashing
 
 //FULL STACK INSTALLS
 npm install pg express method-override express-react-views react react-dom
@@ -50,6 +52,8 @@ npm install pg express method-override express-react-views react react-dom
 // ******************************************
 
 //ALL REQUIRES (DELETE WHAT IS NOT NEEDED)
+
+const sha256 = require('js-sha256')
 const pg = require('pg')
 const moment = require('moment')
 const jsonfile = require('jsonfile');
@@ -57,6 +61,7 @@ const express = require('express');
 const app = express();
 const reactEngine = require('express-react-views').createEngine();
 const methodOverride = require('method-override')
+const cookieParser = require('cookie-parser')
 
 //INIT EXPRESS APP AND METHOD OVERRIDE FOR PUT/DELETE
 app.use(express.static(__dirname+'/public/'));
@@ -64,6 +69,9 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use(methodOverride('_method'));
 app.use(express.static('.')); //FOR CSS FILES
+
+//INIT COOKIER PARSER
+app.use(cookieParser());
 
 //REACT ENGINE
 app.engine('jsx', reactEngine);
